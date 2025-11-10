@@ -9,7 +9,10 @@ import (
 	"golang.org/x/term"
 )
 
-const clearScreen = "\033[J"
+const (
+	clearScreen = "\033[J"
+	shell       = "/bin/fish"
+)
 
 func RunSelector() (err error) {
 	var entries []string
@@ -46,7 +49,7 @@ func mainLoop(entries []string) (err error) {
 
 	path := entries[selection-1]
 
-	cmd := exec.Command("/bin/fish", "-C", path)
+	cmd := exec.Command(shell, "-C", path)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -55,6 +58,7 @@ func mainLoop(entries []string) (err error) {
 	defer func() {
 		fmt.Print("\033[H" + clearScreen)
 	}()
+
 	if err = cmd.Run(); err != nil {
 		return err
 	}
@@ -67,8 +71,10 @@ func getUserInput() (s string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to set terminal to raw: %w", err)
 	}
+	fmt.Print("\033[?25l")
 	defer func() {
 		_ = term.Restore(int(os.Stdin.Fd()), oldState)
+		fmt.Print("\033[?25h")
 	}()
 
 	var buf [1]byte
