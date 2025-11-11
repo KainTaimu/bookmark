@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	HomeConfig         = "XDG_CONFIG_HOME"
-	AppConfig          = "project_selector"
+	ConfigHomeEnv      = "XDG_CONFIG_HOME"
+	AppConfigDir       = "project_selector/"
 	ProjectEntriesFile = "projects.conf"
 )
 
@@ -17,8 +17,8 @@ type Config struct {
 }
 
 func ReadConfig() (entries []string, err error) {
-	configDir := os.Getenv(HomeConfig) + "/"
-	appConfig := configDir + AppConfig + "/"
+	configDir := os.Getenv(ConfigHomeEnv) + "/"
+	appConfig := configDir + AppConfigDir
 	projectsPath := appConfig + ProjectEntriesFile
 
 	err = os.MkdirAll(appConfig, 0o644)
