@@ -17,15 +17,15 @@ type flags struct {
 func main() {
 	flags := parseFlags()
 
-	if flags.EditMode {
-		if err := editMode(); err != nil {
+	if flags.AppendMode {
+		if err := appendMode(); err != nil {
 			fmt.Printf("%s\n", err.Error())
 			os.Exit(1)
 		}
 	}
 
-	if flags.AppendMode {
-		if err := appendMode(); err != nil {
+	if flags.EditMode {
+		if err := editMode(); err != nil {
 			fmt.Printf("%s\n", err.Error())
 			os.Exit(1)
 		}
