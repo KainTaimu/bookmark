@@ -12,7 +12,6 @@ import (
 
 const (
 	clearScreen = "\033[J"
-	shell       = "/bin/fish"
 )
 
 type Color int
@@ -83,8 +82,21 @@ func mainLoop(entries []string) (err error) {
 
 func startNewBuffer(selection int, entries []string) (err error) {
 	path := entries[selection-1]
+	if path[0] == '~' {
+		home, exists := os.LookupEnv("HOME")
+		if !exists {
+			return fmt.Errorf("$HOME is not set")
+		}
+		path = home + "/" + path[1:]
+		if !IsDir(path) {
+			return fmt.Errorf("malformed working dir \"%s\". is $HOME set correctly?", path)
+		}
+	}
 
-	cmd := exec.Command(shell, "-C", path)
+	shell := os.Getenv("SHELL")
+
+	cmd := exec.Command(shell)
+	cmd.Dir = path
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -93,8 +105,13 @@ func startNewBuffer(selection int, entries []string) (err error) {
 	defer func() {
 		fmt.Print("\033[H" + clearScreen)
 	}()
+	if err = cmd.Start(); err != nil {
+		return err
+	}
 
-	if err = cmd.Run(); err != nil {
+	_, _ = cmd.Stdout.Write([]byte(ColorEntry("Entered buffer " + path + "\n")))
+
+	if err = cmd.Wait(); err != nil {
 		return err
 	}
 
@@ -111,10 +128,7 @@ func printEntries(entries []string, color Color) {
 			s = ColorPop("(" + strconv.Itoa(i+1) + ")")
 		}
 
-		fmt.Printf("%s %s", s, entry)
-		if i != len(entries)-1 {
-			fmt.Printf("\n")
-		}
+		fmt.Printf("%s %s\n", s, entry)
 	}
 }
 
