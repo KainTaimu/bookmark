@@ -82,15 +82,9 @@ func mainLoop(entries []string) (err error) {
 
 func startNewBuffer(selection int, entries []string) (err error) {
 	path := entries[selection-1]
-	if path[0] == '~' {
-		home, exists := os.LookupEnv("HOME")
-		if !exists {
-			return fmt.Errorf("$HOME is not set")
-		}
-		path = filepath.Join(home, path[1:])
-		if !IsDir(path) {
-			return fmt.Errorf("malformed working dir \"%s\". is $HOME set correctly?", path)
-		}
+	path, err = TildeExpansion(path)
+	if err != nil {
+		return err
 	}
 
 	shell := os.Getenv("SHELL")
@@ -112,7 +106,7 @@ func startNewBuffer(selection int, entries []string) (err error) {
 		return err
 	}
 
-	_, _ = cmd.Stdout.Write([]byte(ColorEntry("Entered buffer " + path + "\n")))
+	_, _ = cmd.Stdout.Write([]byte(ColorEntry("Entered buffer " + ShortenTildeExpansion(path) + "\n")))
 
 	if err = cmd.Wait(); err != nil {
 		return err
