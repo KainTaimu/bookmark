@@ -17,7 +17,12 @@ type Config struct {
 	Projects []string
 }
 
-func ReadConfig() (entries []string, err error) {
+type Entry struct {
+	Path    string
+	IsValid bool
+}
+
+func ReadConfig() (entries []Entry, err error) {
 	configDir := os.Getenv(ConfigHomeEnv) + "/"
 	appConfig := filepath.Join(configDir, AppConfigDir)
 	projectsPath := filepath.Join(appConfig, ProjectEntriesFile)
@@ -50,11 +55,11 @@ func ReadConfig() (entries []string, err error) {
 			continue
 		}
 
-		entries = append(entries, entry)
-	}
-
-	if missing := verifyProjectsExists(entries); missing != "" {
-		return nil, fmt.Errorf("invalid entry found: directory '%s' does not exist", missing)
+		if IsDir(entry) {
+			entries = append(entries, Entry{Path: entry, IsValid: true})
+		} else {
+			entries = append(entries, Entry{Path: entry, IsValid: false})
+		}
 	}
 
 	return entries, nil

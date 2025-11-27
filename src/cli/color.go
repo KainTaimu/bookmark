@@ -12,3 +12,7 @@ func ColorEntry(s string) string {
 func ColorPop(s string) string {
 	return Bold + "\033[38;2;170;66;66m" + s + End
 }
+
+func ColorInvalid(s string) string {
+	return "\033[3m" + "\033[38;2;128;128;128m" + s + End
+}

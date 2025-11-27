@@ -19,7 +19,7 @@ const (
 )
 
 func RunSelector() (err error) {
-	var entries []string
+	var entries []Entry
 	if entries, err = ReadConfig(); err != nil {
 		return fmt.Errorf("failed to read config: %w", err)
 	}
@@ -30,7 +30,8 @@ func RunSelector() (err error) {
 }
 
 func RunQuickJumper() (err error) {
-	var entries []string
+	fmt.Print(SaveCursor)
+	var entries []Entry
 	if entries, err = ReadConfig(); err != nil {
 		return fmt.Errorf("failed to read config: %w", err)
 	}
@@ -42,18 +43,19 @@ func RunQuickJumper() (err error) {
 		return nil
 	}
 
-	if selection <= 0 || selection > len(entries) {
-		return nil
+	var entry *Entry
+	if entry, err = checkSelectionIsValid(selection, entries); err != nil {
+		return err
 	}
 
-	if err = startNewBuffer(selection, entries); err != nil {
+	if err = startNewBuffer(entry.Path); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func mainLoop(entries []string) (err error) {
+func mainLoop(entries []Entry) (err error) {
 	fmt.Print(SaveCursor)
 	printEntries(entries, Green)
 
@@ -68,20 +70,33 @@ func mainLoop(entries []string) (err error) {
 		return nil
 	}
 
-	if selection <= 0 || selection > len(entries) {
-		fmt.Print(RestoreCursor + ClearToEnd)
-		return nil
+	var entry *Entry
+	if entry, err = checkSelectionIsValid(selection, entries); err != nil {
+		return err
 	}
 
-	if err = startNewBuffer(selection, entries); err != nil {
+	if err = startNewBuffer(entry.Path); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func startNewBuffer(selection int, entries []string) (err error) {
-	path := entries[selection-1]
+func checkSelectionIsValid(selection int, entries []Entry) (*Entry, error) {
+	if selection <= 0 || selection > len(entries) {
+		fmt.Print(RestoreCursor + ClearToEnd)
+		return nil, fmt.Errorf("selection out of bounds")
+	}
+
+	entry := &entries[selection-1]
+	if !entry.IsValid {
+		fmt.Print(RestoreCursor + ClearToEnd)
+		return nil, fmt.Errorf("entry \"%s\" is invalid", entry.Path)
+	}
+	return entry, nil
+}
+
+func startNewBuffer(path string) (err error) {
 	path, err = TildeExpansion(path)
 	if err != nil {
 		return err
@@ -115,7 +130,7 @@ func startNewBuffer(selection int, entries []string) (err error) {
 	return nil
 }
 
-func printEntries(entries []string, color Color) {
+func printEntries(entries []Entry, color Color) {
 	for i, entry := range entries {
 		var s string
 		switch color {
@@ -125,10 +140,16 @@ func printEntries(entries []string, color Color) {
 			s = ColorPop("(" + strconv.Itoa(i+1) + ")")
 		}
 
-		entry = ShortenTildeExpansion(entry)
-		entry = filepath.Clean(entry)
+		path := entry.Path
+		path = ShortenTildeExpansion(path)
+		path = filepath.Clean(path)
 
-		fmt.Printf("%s %s\n", s, entry)
+		if !entry.IsValid {
+			s = ColorInvalid("(" + strconv.Itoa(i+1) + ")")
+			path = ColorInvalid(path)
+		}
+
+		fmt.Printf("%s %s\n", s, path)
 	}
 }
 
