@@ -11,13 +11,6 @@ import (
 	"golang.org/x/term"
 )
 
-type Color int
-
-const (
-	Green Color = iota
-	Red
-)
-
 // RunSelector runs the interactive menu to select the directory to jump to
 func RunSelector() (err error) {
 	var entries []Entry
@@ -66,7 +59,7 @@ func RunQuickJumper() (err error) {
 
 func mainLoop(entries []Entry) (err error) {
 	fmt.Print(SaveCursor)
-	printEntries(entries, Green)
+	printEntries(entries)
 
 	var in string
 	if in, err = getUserInput(); err != nil {
@@ -105,6 +98,7 @@ func checkSelectionIsValid(selection int, entries []Entry) (*Entry, error) {
 	return entry, nil
 }
 
+// Runs the current shell set by $SHELL and redirects all IO to new process
 func startNewBuffer(path string) (err error) {
 	path = TildeExpansion(path)
 
@@ -136,15 +130,9 @@ func startNewBuffer(path string) (err error) {
 	return nil
 }
 
-func printEntries(entries []Entry, color Color) {
+func printEntries(entries []Entry) {
 	for i, entry := range entries {
-		var s string
-		switch color {
-		case Green:
-			s = ColorEntry("(" + strconv.Itoa(i+1) + ")")
-		case Red:
-			s = ColorPop("(" + strconv.Itoa(i+1) + ")")
-		}
+		s := ColorEntry("(" + strconv.Itoa(i+1) + ")")
 
 		path := entry.Path
 		path = ShortenTildeExpansion(path)
