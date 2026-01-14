@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"project-selector/src/cli"
+	"project-selector/cli"
 )
 
 type flags struct {
